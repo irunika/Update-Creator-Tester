@@ -3,9 +3,14 @@ package org.wso2.update.descriptor.tester;
 import com.sun.xml.internal.bind.v2.runtime.reflect.opt.Const;
 import org.apache.commons.io.FilenameUtils;
 import org.wso2.update.descriptor.tester.exceptions.FileNotDeletedException;
+import org.wso2.update.descriptor.tester.model.UpdateDescriptor;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.Constructor;
+import org.yaml.snakeyaml.representer.Representer;
 
 import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -24,6 +29,17 @@ import java.util.zip.ZipFile;
  *
  */
 public class Utils {
+
+    public static UpdateDescriptor loadUpdateDescriptor(String pathToUpdateDir) throws FileNotFoundException {
+
+        Path pathToDescriptorYaml = Paths.get(pathToUpdateDir, Constants.UPDATE_DESCRIPTOR_FILE_NAME);
+        Representer representer = new Representer();
+        representer.getPropertyUtils().setSkipMissingProperties(true);
+        Yaml yaml = new Yaml(new Constructor(UpdateDescriptor.class), representer);
+        InputStream inputStream = new FileInputStream(new File(pathToDescriptorYaml.toUri()));
+        return yaml.load(inputStream);
+    }
+
 
     public static String unzip(String zipName, String extractDir) throws IOException, FileNotDeletedException {
 
@@ -67,7 +83,6 @@ public class Utils {
                     System.out.println("Written :" + entry.getName());
                 }
             }
-
             return extractFilePath.toString();
         }
 
