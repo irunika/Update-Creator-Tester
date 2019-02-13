@@ -4,6 +4,7 @@ import org.wso2.update.descriptor.tester.exceptions.FileNotDeletedException;
 import org.wso2.update.descriptor.tester.model.UpdateDescriptor;
 
 import java.io.IOException;
+import java.nio.file.Paths;
 
 public class UpdateTester {
 
@@ -17,13 +18,22 @@ public class UpdateTester {
         String originalZipExtractLocation = Utils.unzip(originalZip, extractDirOld);
         String newZipExtractLocation = Utils.unzip(newZip, extractDirNew);
 
-        System.out.println(originalZipExtractLocation);
-        System.out.println(newZipExtractLocation);
+        try {
+            UpdateDescriptor originalUpdateDescriptor = Utils.loadUpdateDescriptor(originalZipExtractLocation);
+            UpdateDescriptor newUpdateDescriptor = Utils.loadUpdateDescriptor(newZipExtractLocation);
 
-        UpdateDescriptor originalUpdateDescriptor = Utils.loadUpdateDescriptor(originalZipExtractLocation);
-        UpdateDescriptor newUpdateDescriptor = Utils.loadUpdateDescriptor(newZipExtractLocation);
+            boolean comparisionSuccessful = Utils.compareUpdates(originalUpdateDescriptor, newUpdateDescriptor);
 
-        System.out.println(originalUpdateDescriptor.getPlatform_version());
+            System.out.println();
+            if (comparisionSuccessful) {
+                System.out.println("Comparision is successful!");
+            } else {
+                System.out.println("Comparision is failed!");
+            }
+        } finally {
+            Utils.deleteDir(Paths.get(originalZipExtractLocation));
+            Utils.deleteDir(Paths.get(newZipExtractLocation));
+        }
     }
 
 }

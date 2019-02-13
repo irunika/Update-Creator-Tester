@@ -1,8 +1,8 @@
 package org.wso2.update.descriptor.tester;
 
-import com.sun.xml.internal.bind.v2.runtime.reflect.opt.Const;
 import org.apache.commons.io.FilenameUtils;
 import org.wso2.update.descriptor.tester.exceptions.FileNotDeletedException;
+import org.wso2.update.descriptor.tester.model.CompatibleProduct;
 import org.wso2.update.descriptor.tester.model.UpdateDescriptor;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
@@ -21,7 +21,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Stack;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -29,6 +33,82 @@ import java.util.zip.ZipFile;
  *
  */
 public class Utils {
+
+
+    public static boolean compareUpdates(UpdateDescriptor originalDescriptor, UpdateDescriptor newDescriptor) {
+        boolean status = true;
+
+        // Compare platform names
+        if (!originalDescriptor.getPlatform_name().equals(newDescriptor.getPlatform_name())) {
+            String message = String.format("Platform names are not equal original: %s , new: %s",
+                    originalDescriptor.getPlatform_name(), newDescriptor.getPlatform_name());
+            System.out.println(message);
+            status = false;
+        }
+
+        // Compare platform versions
+        if (!originalDescriptor.getPlatform_version().equals(newDescriptor.getPlatform_version())) {
+            String message = String.format("Platform versions are not equal original: %s , new: %s",
+                    originalDescriptor.getPlatform_version(), newDescriptor.getPlatform_version());
+            System.out.println(message);
+            status = false;
+        }
+
+        CompatibleProduct originalCompatibleProduct = originalDescriptor.getCompatible_products().get(0);
+        CompatibleProduct newCompatibleProduct = newDescriptor.getCompatible_products().get(0);
+
+        System.out.println("\nComparing modified files...");
+        status = status && compareFilesLists(originalCompatibleProduct.getModified_files(),
+                newCompatibleProduct.getModified_files(), "modified");
+
+        System.out.println("\nComparing added files...");
+        status = status && compareFilesLists(originalCompatibleProduct.getAdded_files(),
+                newCompatibleProduct.getAdded_files(), "added");
+
+        System.out.println("\nComparing removed files...");
+        status = status && compareFilesLists(originalCompatibleProduct.getRemoved_files(),
+                newCompatibleProduct.getRemoved_files(), "modified");
+
+        return status;
+    }
+
+    private static boolean compareFilesLists(List<String> originalList, List<String> newList, String fileStatus) {
+        Map<String, Boolean> originalFileMap = createFileMap(originalList);
+        Map<String, Boolean> newFileMap = createFileMap(newList);
+
+        originalFileMap.keySet().forEach(key -> {
+            if (newFileMap.containsKey(key)) {
+                originalFileMap.put(key, true);
+                newFileMap.put(key, true);
+            }
+        });
+
+        AtomicBoolean availableAllOriginalFiles = new AtomicBoolean(true);
+        originalFileMap.forEach((file, found) -> {
+            if (!found) {
+                availableAllOriginalFiles.set(false);
+                String message = String.format("%s file: %s is missing in the new update", fileStatus, file);
+                System.err.println(message);
+            }
+        });
+
+        AtomicBoolean availableAllNewFiles = new AtomicBoolean(true);
+        newFileMap.forEach((file, found) -> {
+            if (!found) {
+                availableAllNewFiles.set(false);
+                String message = String.format("%s file: %s is not available in original update", fileStatus, file);
+                System.err.println(message);
+            }
+        });
+
+        return availableAllOriginalFiles.get() && availableAllNewFiles.get();
+    }
+
+    private static Map<String, Boolean> createFileMap(List<String> filesList) {
+        Map<String, Boolean> filesMap = new HashMap<>();
+        filesList.forEach(file -> filesMap.put(file, false));
+        return filesMap;
+    }
 
     public static UpdateDescriptor loadUpdateDescriptor(String pathToUpdateDir) throws FileNotFoundException {
 
@@ -93,18 +173,18 @@ public class Utils {
      *
      * @param dirPath path to the directory which should be deleted.
      */
-    private static void deleteDir(Path dirPath) throws FileNotDeletedException {
+    public static void deleteDir(Path dirPath) throws FileNotDeletedException {
 
-        Stack<File> directoryStack = new Stack<>();
-        File index = new File(dirPath.toUri());
-        String[] entries = index.list();
+        File unzipDir = new File(dirPath.toUri());
+        String[] entries = unzipDir.list();
 
         if (entries == null) {
             throw new FileNotDeletedException("Could not find any file to delete in '" + dirPath + "'");
         }
 
+        Stack<File> directoryStack = new Stack<>();
         for (String entry : entries) {
-            File currentFile = new File(index.getPath(), entry);
+            File currentFile = new File(unzipDir.getPath(), entry);
             if (currentFile.isDirectory()) {
                 directoryStack.push(currentFile);
             } else {
@@ -117,6 +197,8 @@ public class Utils {
         while (!directoryStack.isEmpty()) {
             deleteDir(directoryStack.pop().toPath());
         }
+
+        unzipDir.delete();
     }
 
 }
