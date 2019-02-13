@@ -1,6 +1,8 @@
 package org.wso2.update.descriptor.tester;
 
 import org.apache.commons.io.FilenameUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.wso2.update.descriptor.tester.exceptions.FileNotDeletedException;
 import org.wso2.update.descriptor.tester.model.CompatibleProduct;
 import org.wso2.update.descriptor.tester.model.UpdateDescriptor;
@@ -35,6 +37,8 @@ import java.util.zip.ZipFile;
  */
 public class Utils {
 
+    private static final Logger log = LoggerFactory.getLogger(Utils.class);
+
     public static boolean checkFileAvailability(String zipHome, UpdateDescriptor updateDescriptor) {
         List<String> filesList = new ArrayList<>();
         CompatibleProduct compatibleProduct = updateDescriptor.getCompatible_products().get(0);
@@ -48,8 +52,7 @@ public class Utils {
             File file = new File(path.toUri());
             if (!file.exists()) {
                 status.set(false);
-                String message = String.format("%s file is not found in the update zip", filePath);
-                System.err.println(message);
+                log.error("{} file is not found in the update zip", filePath);
             }
         });
 
@@ -62,32 +65,30 @@ public class Utils {
 
         // Compare platform names
         if (!originalDescriptor.getPlatform_name().equals(newDescriptor.getPlatform_name())) {
-            String message = String.format("Platform names are not equal original: %s , new: %s",
-                    originalDescriptor.getPlatform_name(), newDescriptor.getPlatform_name());
-            System.out.println(message);
+            log.error("Platform names are not equal original: {} , new: {}", originalDescriptor.getPlatform_name(),
+                    newDescriptor.getPlatform_name());
             status = false;
         }
 
         // Compare platform versions
         if (!originalDescriptor.getPlatform_version().equals(newDescriptor.getPlatform_version())) {
-            String message = String.format("Platform versions are not equal original: %s , new: %s",
+            log.error("Platform versions are not equal original: {} , new: {}",
                     originalDescriptor.getPlatform_version(), newDescriptor.getPlatform_version());
-            System.out.println(message);
             status = false;
         }
 
         CompatibleProduct originalCompatibleProduct = originalDescriptor.getCompatible_products().get(0);
         CompatibleProduct newCompatibleProduct = newDescriptor.getCompatible_products().get(0);
 
-        System.out.println("\nComparing modified files...");
+        log.info("Comparing modified files...");
         status = status && compareFilesLists(originalCompatibleProduct.getModified_files(),
                 newCompatibleProduct.getModified_files(), "modified");
 
-        System.out.println("\nComparing added files...");
+        log.info("Comparing added files...");
         status = status && compareFilesLists(originalCompatibleProduct.getAdded_files(),
                 newCompatibleProduct.getAdded_files(), "added");
 
-        System.out.println("\nComparing removed files...");
+        log.info("Comparing removed files...");
         status = status && compareFilesLists(originalCompatibleProduct.getRemoved_files(),
                 newCompatibleProduct.getRemoved_files(), "modified");
 
@@ -109,8 +110,7 @@ public class Utils {
         originalFileMap.forEach((file, found) -> {
             if (!found) {
                 availableAllOriginalFiles.set(false);
-                String message = String.format("%s file: %s is missing in the new update", fileStatus, file);
-                System.err.println(message);
+                log.error("{} file: {} is missing in the new update", fileStatus, file);
             }
         });
 
@@ -118,8 +118,7 @@ public class Utils {
         newFileMap.forEach((file, found) -> {
             if (!found) {
                 availableAllNewFiles.set(false);
-                String message = String.format("%s file: %s is not available in original update", fileStatus, file);
-                System.err.println(message);
+                log.error("{} file: {} is not available in original update", fileStatus, file);
             }
         });
 
@@ -153,14 +152,9 @@ public class Utils {
             FileSystem fileSystem = FileSystems.getDefault();
             Enumeration<? extends ZipEntry> entries = zipFile.entries();
 
-            System.out.println(FilenameUtils.getExtension(zipName));
-
             Path extractFilePath =
                     Paths.get(extractDir, FilenameUtils.getName(zipName).replace("." + Constants.ZIP, ""));
-            System.out.println(extractFilePath);
-
             if (Files.exists(extractFilePath)) {
-                System.out.println(true);
                 deleteDir(extractFilePath);
             }
 
@@ -169,7 +163,6 @@ public class Utils {
                 ZipEntry entry = entries.nextElement();
                 //If directory then create a new directory in uncompressed folder
                 if (entry.isDirectory()) {
-                    System.out.println("Creating Directory:" + extractDir + entry.getName());
                     Files.createDirectories(Paths.get(extractDir, entry.getName()));
                 } else {
                     InputStream is = zipFile.getInputStream(entry);
@@ -182,9 +175,10 @@ public class Utils {
                         fileOutput.write(bis.read());
                     }
                     fileOutput.close();
-                    System.out.println("Written :" + entry.getName());
                 }
             }
+
+            log.info("Extracting {} is successful", zipName);
             return extractFilePath.toString();
         }
 
