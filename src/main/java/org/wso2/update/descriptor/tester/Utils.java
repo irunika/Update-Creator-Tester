@@ -20,6 +20,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -33,6 +34,27 @@ import java.util.zip.ZipFile;
  *
  */
 public class Utils {
+
+    public static boolean checkFileAvailability(String zipHome, UpdateDescriptor updateDescriptor) {
+        List<String> filesList = new ArrayList<>();
+        CompatibleProduct compatibleProduct = updateDescriptor.getCompatible_products().get(0);
+        filesList.addAll(compatibleProduct.getAdded_files());
+        filesList.addAll(compatibleProduct.getRemoved_files());
+        filesList.addAll(compatibleProduct.getModified_files());
+
+        AtomicBoolean status = new AtomicBoolean(true);
+        filesList.forEach(filePath -> {
+            Path path = Paths.get(zipHome, Constants.UPDATE_CARBON_HOME, filePath);
+            File file = new File(path.toUri());
+            if (!file.exists()) {
+                status.set(false);
+                String message = String.format("%s file is not found in the update zip", filePath);
+                System.err.println(message);
+            }
+        });
+
+        return status.get();
+    }
 
 
     public static boolean compareUpdates(UpdateDescriptor originalDescriptor, UpdateDescriptor newDescriptor) {
@@ -148,11 +170,11 @@ public class Utils {
                 //If directory then create a new directory in uncompressed folder
                 if (entry.isDirectory()) {
                     System.out.println("Creating Directory:" + extractDir + entry.getName());
-                    Files.createDirectories(fileSystem.getPath(extractDir + entry.getName()));
+                    Files.createDirectories(Paths.get(extractDir, entry.getName()));
                 } else {
                     InputStream is = zipFile.getInputStream(entry);
                     BufferedInputStream bis = new BufferedInputStream(is);
-                    String uncompressedFileName = extractDir + entry.getName();
+                    String uncompressedFileName = Paths.get(extractDir, entry.getName()).toString();
                     Path uncompressedFilePath = fileSystem.getPath(uncompressedFileName);
                     Files.createFile(uncompressedFilePath);
                     FileOutputStream fileOutput = new FileOutputStream(uncompressedFileName);

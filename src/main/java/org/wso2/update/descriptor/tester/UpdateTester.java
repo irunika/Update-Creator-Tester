@@ -4,7 +4,6 @@ import org.wso2.update.descriptor.tester.exceptions.FileNotDeletedException;
 import org.wso2.update.descriptor.tester.model.UpdateDescriptor;
 
 import java.io.IOException;
-import java.nio.file.Paths;
 
 public class UpdateTester {
 
@@ -12,27 +11,25 @@ public class UpdateTester {
 
         String originalZip = "/home/irunika/Desktop/WSO2-CARBON-UPDATE-4.4.0-3550.zip";
         String newZip = "/home/irunika/Desktop/WSO2-CARBON-UPDATE-4.4.0-3550.zip";
-        String extractDirOld = "/tmp/old/";
-        String extractDirNew = "/tmp/new/";
 
-        String originalZipExtractLocation = Utils.unzip(originalZip, extractDirOld);
-        String newZipExtractLocation = Utils.unzip(newZip, extractDirNew);
+        String originalZipExtractLocation = Utils.unzip(originalZip, Constants.EXTRACT_DIR_ORIGINAL);
+        String newZipExtractLocation = Utils.unzip(newZip, Constants.EXTRACT_DIR_NEW);
 
-        try {
-            UpdateDescriptor originalUpdateDescriptor = Utils.loadUpdateDescriptor(originalZipExtractLocation);
-            UpdateDescriptor newUpdateDescriptor = Utils.loadUpdateDescriptor(newZipExtractLocation);
+        UpdateDescriptor originalUpdateDescriptor = Utils.loadUpdateDescriptor(originalZipExtractLocation);
+        UpdateDescriptor newUpdateDescriptor = Utils.loadUpdateDescriptor(newZipExtractLocation);
 
-            boolean comparisionSuccessful = Utils.compareUpdates(originalUpdateDescriptor, newUpdateDescriptor);
+        if (Utils.compareUpdates(originalUpdateDescriptor, newUpdateDescriptor)) {
+            System.out.println("\nComparision is successful!");
 
-            System.out.println();
-            if (comparisionSuccessful) {
-                System.out.println("Comparision is successful!");
+            System.out.println("\nChecking files availability in the update");
+
+            if (Utils.checkFileAvailability(newZipExtractLocation, originalUpdateDescriptor)) {
+                System.out.println("\nChecking files availability is successful!");
             } else {
-                System.out.println("Comparision is failed!");
+                System.err.println("\nChecking files availability is failed!");
             }
-        } finally {
-            Utils.deleteDir(Paths.get(originalZipExtractLocation));
-            Utils.deleteDir(Paths.get(newZipExtractLocation));
+        } else {
+            System.out.println("\nComparision is failed!");
         }
     }
 
