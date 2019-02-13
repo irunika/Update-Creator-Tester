@@ -2,6 +2,9 @@ package org.wso2.update.descriptor.tester.model;
 
 import java.util.List;
 
+/**
+ * Class to load update-descriptor3.yaml
+ */
 public class UpdateDescriptor {
 
     private String update_number;

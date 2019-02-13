@@ -33,13 +33,21 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 /**
- *
+ * Utils of the comparision.
  */
 public class Utils {
 
     private static final Logger log = LoggerFactory.getLogger(Utils.class);
 
+    /**
+     * Check the availability of the files inside the extracted zip home.
+     *
+     * @param zipHome          extracted zip home.
+     * @param updateDescriptor {@link UpdateDescriptor} of the particular update zip.
+     * @return true if all the files are available in the unzipped location.
+     */
     public static boolean checkFileAvailability(String zipHome, UpdateDescriptor updateDescriptor) {
+
         List<String> filesList = new ArrayList<>();
         CompatibleProduct compatibleProduct = updateDescriptor.getCompatible_products().get(0);
         filesList.addAll(compatibleProduct.getAdded_files());
@@ -59,8 +67,15 @@ public class Utils {
         return status.get();
     }
 
-
+    /**
+     * Compare the update descriptors of the original and new update zip files.
+     *
+     * @param originalDescriptor {@link UpdateDescriptor} of the original update zip.
+     * @param newDescriptor      {@link UpdateDescriptor} of the new update zip.
+     * @return true if all of files in the original descriptor is available in the new descriptor.
+     */
     public static boolean compareUpdates(UpdateDescriptor originalDescriptor, UpdateDescriptor newDescriptor) {
+
         boolean status = true;
 
         // Compare platform names
@@ -96,6 +111,7 @@ public class Utils {
     }
 
     private static boolean compareFilesLists(List<String> originalList, List<String> newList, String fileStatus) {
+
         Map<String, Boolean> originalFileMap = createFileMap(originalList);
         Map<String, Boolean> newFileMap = createFileMap(newList);
 
@@ -126,11 +142,19 @@ public class Utils {
     }
 
     private static Map<String, Boolean> createFileMap(List<String> filesList) {
+
         Map<String, Boolean> filesMap = new HashMap<>();
         filesList.forEach(file -> filesMap.put(file, false));
         return filesMap;
     }
 
+    /**
+     * Load update descriptor yaml from the file.
+     *
+     * @param pathToUpdateDir path to the extracted update directory.
+     * @return the loaded {@link UpdateDescriptor}.
+     * @throws FileNotFoundException if the update-descriptor3.yaml is not found in the update directory.
+     */
     public static UpdateDescriptor loadUpdateDescriptor(String pathToUpdateDir) throws FileNotFoundException {
 
         Path pathToDescriptorYaml = Paths.get(pathToUpdateDir, Constants.UPDATE_DESCRIPTOR_FILE_NAME);
@@ -141,19 +165,28 @@ public class Utils {
         return yaml.load(inputStream);
     }
 
+    /**
+     * Unzip the given product directory.
+     *
+     * @param pathToZip  path to the zip file.
+     * @param extractDir directory which the zip should be extracted to.
+     * @return the location of the extracted directory.
+     * @throws IOException             if any IO issue occurred.
+     * @throws FileNotDeletedException if the given zip file is not found.
+     */
+    public static String unzip(String pathToZip, String extractDir) throws IOException, FileNotDeletedException {
 
-    public static String unzip(String zipName, String extractDir) throws IOException, FileNotDeletedException {
-
-        if (!Constants.ZIP.equals(FilenameUtils.getExtension(zipName))) {
-            throw new FileNotFoundException(zipName + " is not a zip file");
+        log.info("extracting {}...", pathToZip);
+        if (!Constants.ZIP.equals(FilenameUtils.getExtension(pathToZip))) {
+            throw new FileNotFoundException(pathToZip + " is not a zip file");
         }
 
-        try (ZipFile zipFile = new ZipFile(zipName)) {
+        try (ZipFile zipFile = new ZipFile(pathToZip)) {
             FileSystem fileSystem = FileSystems.getDefault();
             Enumeration<? extends ZipEntry> entries = zipFile.entries();
 
             Path extractFilePath =
-                    Paths.get(extractDir, FilenameUtils.getName(zipName).replace("." + Constants.ZIP, ""));
+                    Paths.get(extractDir, FilenameUtils.getName(pathToZip).replace("." + Constants.ZIP, ""));
             if (Files.exists(extractFilePath)) {
                 deleteDir(extractFilePath);
             }
@@ -178,7 +211,7 @@ public class Utils {
                 }
             }
 
-            log.info("Extracting {} is successful", zipName);
+            log.info("Successfully extracted to {}", extractFilePath);
             return extractFilePath.toString();
         }
 

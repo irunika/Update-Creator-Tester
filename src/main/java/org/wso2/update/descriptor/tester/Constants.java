@@ -1,8 +1,10 @@
 package org.wso2.update.descriptor.tester;
 
-import java.nio.file.Path;
 import java.nio.file.Paths;
 
+/**
+ * Holds all the constants of the project.
+ */
 public class Constants {
 
     public static final String ZIP = "zip";

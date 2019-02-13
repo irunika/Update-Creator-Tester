@@ -2,6 +2,9 @@ package org.wso2.update.descriptor.tester.model;
 
 import java.util.List;
 
+/**
+ * Class to load compatible_products from the update-descriptor3.yaml.
+ */
 public class CompatibleProduct {
 
     private String product_name;

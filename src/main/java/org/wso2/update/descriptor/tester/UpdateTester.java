@@ -7,6 +7,9 @@ import org.wso2.update.descriptor.tester.model.UpdateDescriptor;
 
 import java.io.IOException;
 
+/**
+ * Main class of the project.
+ */
 public class UpdateTester {
 
     private static final Logger log = LoggerFactory.getLogger(UpdateTester.class);
