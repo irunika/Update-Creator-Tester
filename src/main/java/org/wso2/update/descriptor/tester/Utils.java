@@ -176,7 +176,7 @@ public class Utils {
      */
     public static String unzip(String pathToZip, String extractDir) throws IOException, FileNotDeletedException {
 
-        log.info("extracting {}...", pathToZip);
+        log.info("Extracting {}...", pathToZip);
         if (!Constants.ZIP.equals(FilenameUtils.getExtension(pathToZip))) {
             throw new FileNotFoundException(pathToZip + " is not a zip file");
         }

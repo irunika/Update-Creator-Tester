@@ -16,8 +16,12 @@ public class UpdateTester {
 
     public static void main(String[] args) throws IOException, FileNotDeletedException {
 
-        String originalZip = "/home/irunika/Desktop/WSO2-CARBON-UPDATE-4.4.0-3550.zip";
-        String newZip = "/home/irunika/Downloads/WSO2-CARBON-UPDATE-4.4.0-3617.zip";
+        if (args.length != 2) {
+            throw new IllegalArgumentException("Give exactly two arguments!");
+        }
+
+        String originalZip = args[0];
+        String newZip = args[1];
 
         String originalZipExtractLocation = Utils.unzip(originalZip, Constants.EXTRACT_DIR_ORIGINAL);
         String newZipExtractLocation = Utils.unzip(newZip, Constants.EXTRACT_DIR_NEW);
