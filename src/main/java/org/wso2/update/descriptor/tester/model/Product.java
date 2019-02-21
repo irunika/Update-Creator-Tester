@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * Class to load compatible_products from the update-descriptor3.yaml.
  */
-public class CompatibleProduct {
+public class Product {
 
     private String product_name;
     private String product_version;

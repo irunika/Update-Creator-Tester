@@ -30,15 +30,15 @@ public class UpdateTester {
         UpdateDescriptor newUpdateDescriptor = Utils.loadUpdateDescriptor(newZipExtractLocation);
 
         if (Utils.compareUpdates(originalUpdateDescriptor, newUpdateDescriptor)) {
-            log.info("Comparision is successful!");
-            log.info("Checking files availability in the update");
+            log.info("comparison is successful!");
+            log.info("Checking files availability in the update...");
             if (Utils.checkFileAvailability(newZipExtractLocation, originalUpdateDescriptor)) {
                 log.info("Checking files availability is successful!");
             } else {
                 log.error("Checking files availability is failed!");
             }
         } else {
-            log.error("Comparision is failed!");
+            log.error("comparison is failed!");
         }
     }
 

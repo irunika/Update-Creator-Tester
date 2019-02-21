@@ -4,7 +4,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wso2.update.descriptor.tester.exceptions.FileNotDeletedException;
-import org.wso2.update.descriptor.tester.model.CompatibleProduct;
+import org.wso2.update.descriptor.tester.model.Product;
 import org.wso2.update.descriptor.tester.model.UpdateDescriptor;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
@@ -33,7 +33,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 /**
- * Utils of the comparision.
+ * Utils of the comparison.
  */
 public class Utils {
 
@@ -49,7 +49,7 @@ public class Utils {
     public static boolean checkFileAvailability(String zipHome, UpdateDescriptor updateDescriptor) {
 
         List<String> filesList = new ArrayList<>();
-        CompatibleProduct compatibleProduct = updateDescriptor.getCompatible_products().get(0);
+        Product compatibleProduct = updateDescriptor.getCompatible_products().get(0);
         filesList.addAll(compatibleProduct.getAdded_files());
         filesList.addAll(compatibleProduct.getRemoved_files());
         filesList.addAll(compatibleProduct.getModified_files());
@@ -92,21 +92,64 @@ public class Utils {
             status = false;
         }
 
-        CompatibleProduct originalCompatibleProduct = originalDescriptor.getCompatible_products().get(0);
-        CompatibleProduct newCompatibleProduct = newDescriptor.getCompatible_products().get(0);
+        log.info("======== Comparing compatible products ========");
+        status = status & compareProductLists(originalDescriptor.getCompatible_products(),
+                newDescriptor.getCompatible_products());
 
-        log.info("Comparing modified files...");
+        log.info("======== Comparing partially compatible products ========");
+        status = status & compareProductLists(originalDescriptor.getPartially_applicable_products(),
+                newDescriptor.getPartially_applicable_products());
+
+        return status;
+    }
+
+    private static boolean compareProductLists(List<Product> originalProductList, List<Product> newProductList) {
+
+        boolean status = true;
+        if (originalProductList.size() != newProductList.size()) {
+            log.error("Size of the products lists are not equal. Expected {}, found {}", originalProductList.size(),
+                    newProductList.size());
+            status = false;
+        }
+
+        Map<String, Product> originalProductMap = new HashMap<>();
+        originalProductList.forEach(product ->
+                originalProductMap.put(product.getProduct_name() + product.getProduct_version(), product));
+
+        AtomicBoolean statusBoolean = new AtomicBoolean(status);
+        newProductList.forEach(newProduct -> {
+            String productName = newProduct.getProduct_name();
+            String productVersion = newProduct.getProduct_version();
+            Product originalProduct = originalProductMap.remove(productName + productVersion);
+
+            if (originalProduct == null) {
+                log.error("{}-{} could not be found in the original zip file", productName, productVersion);
+                statusBoolean.set(false);
+            } else {
+                log.info("Comparing files of {}-{}", productName, productVersion);
+                statusBoolean.set(statusBoolean.get() && compareFiles(originalProduct, newProduct));
+            }
+        });
+
+        if (!originalProductMap.isEmpty()) {
+            originalProductMap.values().forEach(
+                    product -> log.error("{}-{} could not be found in the new update descriptor.",
+                            product.getProduct_name(), product.getProduct_version()));
+            return false;
+        }
+
+        return statusBoolean.get();
+    }
+
+    private static boolean compareFiles(Product originalCompatibleProduct, Product newCompatibleProduct) {
+
+        boolean status = true;
         status = status && compareFilesLists(originalCompatibleProduct.getModified_files(),
                 newCompatibleProduct.getModified_files(), "modified");
-
-        log.info("Comparing added files...");
         status = status && compareFilesLists(originalCompatibleProduct.getAdded_files(),
                 newCompatibleProduct.getAdded_files(), "added");
-
-        log.info("Comparing removed files...");
         status = status && compareFilesLists(originalCompatibleProduct.getRemoved_files(),
                 newCompatibleProduct.getRemoved_files(), "modified");
-
         return status;
     }
 

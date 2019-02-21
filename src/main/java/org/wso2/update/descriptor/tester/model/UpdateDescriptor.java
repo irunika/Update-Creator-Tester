@@ -10,7 +10,8 @@ public class UpdateDescriptor {
     private String update_number;
     private String platform_version;
     private String platform_name;
-    private List<CompatibleProduct> compatible_products;
+    private List<Product> compatible_products;
+    private List<Product> partially_applicable_products;
 
     public String getUpdate_number() {
 
@@ -42,13 +43,23 @@ public class UpdateDescriptor {
         this.platform_name = platform_name;
     }
 
-    public List<CompatibleProduct> getCompatible_products() {
+    public List<Product> getCompatible_products() {
 
         return compatible_products;
     }
 
-    public void setCompatible_products(List<CompatibleProduct> compatible_products) {
+    public void setCompatible_products(List<Product> compatible_products) {
 
         this.compatible_products = compatible_products;
+    }
+
+    public List<Product> getPartially_applicable_products() {
+
+        return partially_applicable_products;
+    }
+
+    public void setPartially_applicable_products(List<Product> partially_applicable_products) {
+
+        this.partially_applicable_products = partially_applicable_products;
     }
 }
